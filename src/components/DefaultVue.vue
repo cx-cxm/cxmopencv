@@ -1,13 +1,46 @@
 <template>
   <div class="">
-    <h1>default</h1>
+    <h3>test</h3>
   </div>
 </template>
 
 <script>
+
+// import store from '../store'
+// vuexはthis.$store.stateを略して呼べるようにするため
+// import { mapState, mapMutations, mapGetters mapActions } from 'vuex'
+
 export default {
-  name: 'DefaultVue'
-}
+  name: 'DefaultVue',
+  data: function () {
+    return {
+
+    }
+  },
+
+  mounted: function () {
+
+  },
+
+  computed: {
+    // ...mapState(['']),
+    // ...mapGetters(['']),
+
+    classObjA: function () {
+      return {
+      }
+    }
+  },
+
+  watch: {
+  },
+
+  methods: {
+    start () {
+
+    }
+  }//  methods
+}//  export default
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
