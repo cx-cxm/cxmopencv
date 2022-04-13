@@ -1,6 +1,10 @@
 <template>
+  <v-app>
+    <v-main>
       <!--router-view/-->
       <HomeView/>
+    </v-main>
+  </v-app>
 </template>
 
 <script>

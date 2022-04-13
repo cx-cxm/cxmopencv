@@ -9,23 +9,37 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
   </head>
-  <script async src='https://docs.opencv.org/4.5.0/opencv.js' onload='onOpenCvReady()' type='text/javascript'></script>
+  <script async src='https://docs.opencv.org/4.5.5/opencv.js' onload='onOpenCvReady()' type='text/javascript'></script>
+  <script async src='https://docs.opencv.org/4.5.5/utils.js' onload='onUtilReady()' type='text/javascript'></script>
   <body>
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    <button type="button" id="btn" class="btn" disabled>start</button>
     <div id="container">
     <div id="app" ></div>
     </div>
     <!-- built files will be auto injected -->
   </body>
   <script>
+    var cnt = 0
     document.getElementById('container').style.visibility = 'hidden'
 
     function onOpenCvReady(){
-      document.getElementById('btn').disabled = false
+      console.log('ok1')
+      cnt++
+
+      if(cnt === 2){
       document.getElementById('container').style.visibility = 'visible'
+    }
+    }
+
+    function onUtilReady(){
+      console.log('ok2')
+      cnt++
+
+      if(cnt === 2){
+      document.getElementById('container').style.visibility = 'visible'
+    }
     }
 
   </script>
