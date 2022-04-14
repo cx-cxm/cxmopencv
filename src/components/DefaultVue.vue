@@ -2,17 +2,16 @@
   <div class="">
     <h3 class='centertop'>ready!</h3>
     <v-btn fab x-large @click='start' class='center'>start</v-btn>
+      <input type='button' @click='stt' ref='stt' value='start'>
+      <input type='button' @click='stp' id='stp' value='stop'>
      <img ref='pica' :src="require('../assets/pica.jpeg')">
-      <img ref='picb' :src="require('../assets/picb.jpeg')">
+      <!--img ref='picb' :src="require('../assets/picb.jpeg')"-->
+      <!--img ref='image' -->
       <canvas ref='cana'></canvas>
       <canvas ref='canb'></canvas>
       <canvas ref='canc'></canvas>
-
-      <input type='button' @click='this.stt()' ref='stt' value='start'>
-      <input type='button' @click='this.stp()' id='stp' value='stop'>
       <canvas ref='buffer'></canvas>
       <video muted playsinline ref='video'></video>
-      <img ref='image' >
   </div>
 </template>
 
@@ -38,8 +37,8 @@ const medias =
   audio: false,
   video: {
     facingMode: 'environment',
-    width: { ideal: 1920 },
-    height: { ideal: 1080 }
+    width: { ideal: 222 }, // 1920
+    height: { ideal: 227 } // 1080
     // aspectRatio: {exact: 1.7777777778}
     // facingMode: "user" // フロントカメラにアクセス
   }
@@ -61,7 +60,8 @@ export default {
   data: function () {
     return {
       flgg: 1,
-      frame: 0
+      frame: 0,
+      templgray: ''
     }
   },
 
@@ -109,8 +109,8 @@ export default {
 
       this.$refs.buffer.setAttribute('width', w)
       this.$refs.buffer.setAttribute('height', h)
-      this.$refs.image.setAttribute('width', w)
-      this.$refs.image.setAttribute('height', h)
+      // this.$refs.image.setAttribute('width', w)
+      // this.$refs.image.setAttribute('height', h)
 
       this.$refs.video.style.display = 'none'
       this.$refs.buffer.style.display = 'none'
@@ -140,54 +140,52 @@ export default {
       const video = this.$refs.video
       requestAnimationFrame(this.draw)
       this.frame++
-      if (this.frame % 60 !== 0) {
+      if (this.frame % 300 !== 0) {
         return
       }
       this.$refs.buffer.getContext('2d').drawImage(video, 0, 0, w, h)
-      this.$refs.image.src = this.$refs.buffer.toDataURL('image/jpeg')
+      // this.$refs.image.src = this.$refs.buffer.toDataURL('image/jpeg')
+      // console.log(this.$refs.image)
 
       // uploadCanvasData()
 
       // ローカルでファイル生成する場合は以下追加
-      const a = document.createElement('a') // download属性を持ったaタグをクリックするとダウンロードができるので、それをシミュレートする
-      document.body.appendChild(a)
-      a.style = 'display:none'
-      a.href = this.$refs.image.src
+      // const a = document.createElement('a') // download属性を持ったaタグをクリックするとダウンロードができるので、それをシミュレートする
+      // document.body.appendChild(a)
+      // a.style = 'display:none'
+      // a.href = this.$refs.image.src
       // const day = new Date()
       // a.download = day + '.jpg'
       // a.click()
       // createされた、objUrlを解放
       // window.URL.revokeObjectURL(this.$refs.img.src)
+      this.opencv()
     },
 
-    start () {
-      // draw
-
-      // stt()
-      // stp()
-
-      this.$refs.video.play()
-      this.capture()
-      this.draw()
-
-      //
-      //
-      // 特徴点検出
+    opencvtemp () {
       const cv = window.cv
       const templ = cv.imread(this.$refs.pica)
-      const src = cv.imread(this.$refs.pica)
+      this.templgray = new cv.Mat()
+      cv.cvtColor(templ, this.templgray, cv.COLOR_RGBA2GRAY)
+    },
+
+    opencv () {
+      // 特徴点検出
+      const cv = window.cv
+      // const templ = cv.imread(this.$refs.pica)
+      const src = cv.imread(this.$refs.buffer)
       const srcgray = new cv.Mat()
-      const templgray = new cv.Mat()
+      // const templgray = new cv.Mat()
       cv.cvtColor(src, srcgray, cv.COLOR_RGBA2GRAY)
-      cv.cvtColor(templ, templgray, cv.COLOR_RGBA2GRAY)
+      // cv.cvtColor(templ, templgray, cv.COLOR_RGBA2GRAY)
 
       const akaze = new cv.AKAZE()
       const templkp = new cv.KeyPointVector()
       const templdas = new cv.Mat()
       const templmask = new cv.Mat()
-      akaze.detectAndCompute(templgray, templmask, templkp, templdas)
+      akaze.detectAndCompute(this.templgray, templmask, templkp, templdas)
       const templview = new cv.Mat()
-      cv.drawKeypoints(templgray, templkp, templview)
+      cv.drawKeypoints(this.templgray, templkp, templview)
       cv.imshow(this.$refs.cana, templview)
 
       const srckp = new cv.KeyPointVector()
@@ -211,13 +209,13 @@ export default {
         const dMatch1 = match.get(0)
         const dMatch2 = match.get(1)
 
-        if (dMatch1.distance <= dMatch2.distance * 0.8) {
+        if (dMatch1 && dMatch2 && dMatch1.distance <= dMatch2.distance * 0.8) {
           goodmatches.push_back(dMatch1)
         }
       }
       console.log('good_matches : ' + goodmatches.size())
       const imgmatches = new cv.Mat()
-      cv.drawMatches(templgray, templkp, srcgray, srckp, goodmatches, imgmatches)
+      cv.drawMatches(this.templgray, templkp, srcgray, srckp, goodmatches, imgmatches)
       cv.imshow(this.$refs.canc, imgmatches)
 
       let homo
@@ -241,14 +239,16 @@ export default {
       }
 
       // ホモグラフィーした点を整理
-      const objCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, templgray.cols - 1, 0, templgray.cols - 1, templgray.rows - 1, 0, templgray.rows - 1])
-      const sceneCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 0, 0, 0, 0, 0, 0])
-      cv.perspectiveTransform(objCornersMatarr, sceneCornersMatarr, homo)
-      const corner1 = new cv.Point(sceneCornersMatarr.data32F[0], sceneCornersMatarr.data32F[1])
-      const corner2 = new cv.Point(sceneCornersMatarr.data32F[2], sceneCornersMatarr.data32F[3])
-      const corner3 = new cv.Point(sceneCornersMatarr.data32F[4], sceneCornersMatarr.data32F[5])
-      const corner4 = new cv.Point(sceneCornersMatarr.data32F[6], sceneCornersMatarr.data32F[7])
-      console.log(corner1, corner2, corner3, corner4)
+      if (homo) {
+        const objCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.templgray.cols - 1, 0, this.templgray.cols - 1, this.templgray.rows - 1, 0, this.templgray.rows - 1])
+        const sceneCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 0, 0, 0, 0, 0, 0])
+        cv.perspectiveTransform(objCornersMatarr, sceneCornersMatarr, homo)
+        const corner1 = new cv.Point(sceneCornersMatarr.data32F[0], sceneCornersMatarr.data32F[1])
+        const corner2 = new cv.Point(sceneCornersMatarr.data32F[2], sceneCornersMatarr.data32F[3])
+        const corner3 = new cv.Point(sceneCornersMatarr.data32F[4], sceneCornersMatarr.data32F[5])
+        const corner4 = new cv.Point(sceneCornersMatarr.data32F[6], sceneCornersMatarr.data32F[7])
+        console.log(corner1, corner2, corner3, corner4)
+      }
 
       /*
       const matchFeatures = ({ img1, img2, detector, matchFunc }) => {
@@ -298,6 +298,21 @@ export default {
       window.cv.imshowWait('ORB matches', orbMatchesImg)
     }
     */
+    },
+
+    start () {
+      // draw
+
+      // stt()
+      // stp()
+
+      this.$refs.video.play()
+      this.capture()
+      this.opencvtemp()
+      this.draw()
+
+      //
+      //
     }
   }//  methods
 }//  export default
