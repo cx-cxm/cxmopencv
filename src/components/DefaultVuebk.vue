@@ -7,12 +7,6 @@
       <canvas ref='cana'></canvas>
       <canvas ref='canb'></canvas>
       <canvas ref='canc'></canvas>
-
-      <input type='button' @click='this.stt()' ref='stt' value='start'>
-      <input type='button' @click='this.stp()' id='stp' value='stop'>
-      <canvas ref='buffer'></canvas>
-      <video muted playsinline ref='video'></video>
-      <img ref='image' >
   </div>
 </template>
 
@@ -22,46 +16,11 @@
 // vuexはthis.$store.stateを略して呼べるようにするため
 // import { mapState, mapMutations, mapGetters mapActions } from 'vuex'
 
-// const buffer = this.$refs.buffer.getContext('2d')
-// let canvas = document.getElementById('buffer')
-// const video = this.$refs.video
-// const img = document.getElementById('image')
-// const reader = new FileReader()
-
-let w
-let h
-
-// let img
-
-const medias =
-{
-  audio: false,
-  video: {
-    facingMode: 'environment',
-    width: { ideal: 1920 },
-    height: { ideal: 1080 }
-    // aspectRatio: {exact: 1.7777777778}
-    // facingMode: "user" // フロントカメラにアクセス
-  }
-}
-
-const mediaDevices = navigator.mediaDevices || ((navigator.mozGetUserMedia || navigator.webkitGetUserMedia)
-  ? {
-      getUserMedia: function (c) {
-        return new Promise(function (resolve, reject) {
-          (navigator.mozGetUserMedia ||
-        navigator.webkitGetUserMedia).call(navigator, c, resolve, reject)
-        })
-      }
-    }
-  : null)
-
 export default {
   name: 'DefaultVue',
   data: function () {
     return {
-      flgg: 1,
-      frame: 0
+
     }
   },
 
@@ -83,95 +42,7 @@ export default {
   },
 
   methods: {
-    stt () {
-      this.flgg = 0
-      this.$refs.video.style.display = 'none'
-      // uploadCanvasData()
-    },
-
-    stp () {
-      const video = this.$refs.video
-      this.flgg = 1
-      video.style.display = ''
-      video.style.width = String(w) / 3 + 'px'
-      video.style.height = String(h) / 3 + 'px'
-    },
-
-    successCallback (stream) {
-      const video = this.$refs.video
-      video.srcObject = stream
-      const settings = stream.getVideoTracks()[0].getSettings()
-      w = settings.width
-      h = settings.height
-      console.log(w)
-      // w=1536
-      // h=2048
-
-      this.$refs.buffer.setAttribute('width', w)
-      this.$refs.buffer.setAttribute('height', h)
-      this.$refs.image.setAttribute('width', w)
-      this.$refs.image.setAttribute('height', h)
-
-      this.$refs.video.style.display = 'none'
-      this.$refs.buffer.style.display = 'none'
-      /*
-      canvas.width *= devicePixelRatio
-      canvas.height *= devicePixelRatio
-      canvas.style.width = String(canvas.width / devicePixelRatio) + "px"
-      canvas.style.height = String(canvas.height / devicePixelRatio) + "px"
-      */
-    },
-    errorCallback (err) {
-      alert(err)
-    },
-
-    capture () {
-      if (mediaDevices) {
-        const promise = mediaDevices.getUserMedia(medias)
-
-        promise.then(this.successCallback)
-          .catch(this.errorCallback)
-      } else {
-        console.log('err')
-      }
-    },
-
-    draw () {
-      const video = this.$refs.video
-      requestAnimationFrame(this.draw)
-      this.frame++
-      if (this.frame % 60 !== 0) {
-        return
-      }
-      this.$refs.buffer.getContext('2d').drawImage(video, 0, 0, w, h)
-      this.$refs.image.src = this.$refs.buffer.toDataURL('image/jpeg')
-
-      // uploadCanvasData()
-
-      // ローカルでファイル生成する場合は以下追加
-      const a = document.createElement('a') // download属性を持ったaタグをクリックするとダウンロードができるので、それをシミュレートする
-      document.body.appendChild(a)
-      a.style = 'display:none'
-      a.href = this.$refs.image.src
-      // const day = new Date()
-      // a.download = day + '.jpg'
-      // a.click()
-      // createされた、objUrlを解放
-      // window.URL.revokeObjectURL(this.$refs.img.src)
-    },
-
     start () {
-      // draw
-
-      // stt()
-      // stp()
-
-      this.$refs.video.play()
-      this.capture()
-      this.draw()
-
-      //
-      //
       // 特徴点検出
       const cv = window.cv
       const templ = cv.imread(this.$refs.pica)
