@@ -2,43 +2,29 @@
   <div class="">
     <h3 class='centertop'>ready!</h3>
     <v-btn fab x-large @click='start' class='center'>start</v-btn>
-      <input type='button' @click='stt' ref='stt' value='start'>
-      <input type='button' @click='stp' id='stp' value='stop'>
-     <img ref='pica' :src="require('../assets/pica.jpeg')">
-      <img ref='picb' :src="require('../assets/picb.jpeg')">
-      <!--img ref='image' -->
-      <canvas ref='cana'></canvas>
-      <canvas ref='canb'></canvas>
-      <canvas ref='canc'></canvas>
-      <canvas ref='buffer'></canvas>
-      <video muted playsinline ref='video'></video>
+    <img ref='pica' :src="require('../assets/pica.png')">
+    <img ref='picb' :src="require('../assets/picb.png')">
+    <!--img ref='image' -->
+    <video muted playsinline ref='video'></video>
+    <canvas ref='cana'></canvas>
+    <canvas ref='canb'></canvas>
+    <canvas ref='canc'></canvas>
+    <canvas ref='buffer'></canvas>
   </div>
 </template>
 
 <script>
-
 // import store from '../store'
 // vuexはthis.$store.stateを略して呼べるようにするため
 // import { mapState, mapMutations, mapGetters mapActions } from 'vuex'
-
-// const buffer = this.$refs.buffer.getContext('2d')
-// let canvas = document.getElementById('buffer')
-// const video = this.$refs.video
-// const img = document.getElementById('image')
-// const reader = new FileReader()
-
-let w
-let h
-
-// let img
 
 const medias =
 {
   audio: false,
   video: {
-    facingMode: 'environment',
-    width: { ideal: 222 }, // 1920
-    height: { ideal: 227 } // 1080
+    facingMode: 'environment'
+    // width: { ideal: 222 }, // 1920
+    // height: { ideal: 227 } // 1080
     // aspectRatio: {exact: 1.7777777778}
     // facingMode: "user" // フロントカメラにアクセス
   }
@@ -59,14 +45,26 @@ export default {
   name: 'DefaultVue',
   data: function () {
     return {
-      flgg: 1,
       frame: 0,
-      templgray: ''
+      templgray: '',
+      video: '',
+      templ: '',
+      h: 0,
+      w: 0,
+      id: undefined,
+      arr: [],
+      time: 0,
+      time1: 20000,
+      time2: 10000,
+      matchval: 60
     }
   },
 
   mounted: function () {
-
+    this.video = this.$refs.video
+    this.$refs.pica.style.visibility = 'hidden'
+    this.$refs.picb.style.visibility = 'hidden'
+    this.arr = [this.$refs.pica, this.$refs.picb]
   },
 
   computed: {
@@ -83,42 +81,27 @@ export default {
   },
 
   methods: {
-    stt () {
-      this.flgg = 0
-      this.$refs.video.style.display = 'none'
-      // uploadCanvasData()
+    trigger () {
+      alert('movie start')
     },
-
-    stp () {
-      const video = this.$refs.video
-      this.flgg = 1
-      video.style.display = ''
-      video.style.width = String(w) / 3 + 'px'
-      video.style.height = String(h) / 3 + 'px'
-    },
-
     successCallback (stream) {
-      const video = this.$refs.video
-      video.srcObject = stream
+      this.video.srcObject = stream
       const settings = stream.getVideoTracks()[0].getSettings()
-      w = settings.width
-      h = settings.height
-      console.log(w)
+      this.w = settings.width
+      this.h = settings.height
+      console.log(this.w)
       // w=1536
       // h=2048
 
-      this.$refs.buffer.setAttribute('width', w)
-      this.$refs.buffer.setAttribute('height', h)
-      // this.$refs.image.setAttribute('width', w)
-      // this.$refs.image.setAttribute('height', h)
+      this.$refs.buffer.setAttribute('width', this.w / 2)
+      this.$refs.buffer.setAttribute('height', this.h / 2)
 
-      this.$refs.video.style.display = 'none'
       this.$refs.buffer.style.display = 'none'
       /*
-      canvas.width *= devicePixelRatio
-      canvas.height *= devicePixelRatio
-      canvas.style.width = String(canvas.width / devicePixelRatio) + "px"
-      canvas.style.height = String(canvas.height / devicePixelRatio) + "px"
+        canvas.width *= devicePixelRatio
+        canvas.height *= devicePixelRatio
+        canvas.style.width = String(canvas.width / devicePixelRatio) + "px"
+        canvas.style.height = String(canvas.height / devicePixelRatio) + "px"
       */
     },
     errorCallback (err) {
@@ -137,52 +120,31 @@ export default {
     },
 
     draw () {
-      const video = this.$refs.video
-      requestAnimationFrame(this.draw)
+      this.id = requestAnimationFrame(this.draw)
       this.frame++
-      if (this.frame % 300 !== 0) {
+      if (this.frame % 30 !== 0) {
         return
       }
-      this.$refs.buffer.getContext('2d').drawImage(video, 0, 0, w, h)
-      // this.$refs.image.src = this.$refs.buffer.toDataURL('image/jpeg')
-      // console.log(this.$refs.image)
-
-      // uploadCanvasData()
-
-      // ローカルでファイル生成する場合は以下追加
-      // const a = document.createElement('a') // download属性を持ったaタグをクリックするとダウンロードができるので、それをシミュレートする
-      // document.body.appendChild(a)
-      // a.style = 'display:none'
-      // a.href = this.$refs.image.src
-      // const day = new Date()
-      // a.download = day + '.jpg'
-      // a.click()
-      // createされた、objUrlを解放
-      // window.URL.revokeObjectURL(this.$refs.img.src)
+      this.$refs.buffer.getContext('2d').drawImage(this.video, 0, 0, this.w / 2, this.h / 2)
       this.opencv()
     },
-
+    /*
     opencvtemp () {
       const cv = window.cv
       const templ = cv.imread(this.$refs.pica)
       this.templgray = new cv.Mat()
       cv.cvtColor(templ, this.templgray, cv.COLOR_RGBA2GRAY)
     },
+    */
 
     opencv () {
       // 特徴点検出
       const cv = window.cv
-      let cnt = 0
       for (let i = 0; i < 2; i++) {
-        if (cnt === 0) {
-          const templ = cv.imread(this.$refs.pica)
-          this.templgray = new cv.Mat()
-          cv.cvtColor(templ, this.templgray, cv.COLOR_RGBA2GRAY)
-        } else if (cnt === 1) {
-          const templ = cv.imread(this.$refs.picb)
-          this.templgray = new cv.Mat()
-          cv.cvtColor(templ, this.templgray, cv.COLOR_RGBA2GRAY)
-        }
+        this.templ = cv.imread(this.arr[i])
+        console.log(this.time)
+        this.templgray = new cv.Mat()
+        cv.cvtColor(this.templ, this.templgray, cv.COLOR_RGBA2GRAY)
         // const templ = cv.imread(this.$refs.pica)
         const src = cv.imread(this.$refs.buffer)
         const srcgray = new cv.Mat()
@@ -195,18 +157,17 @@ export default {
         const templdas = new cv.Mat()
         const templmask = new cv.Mat()
         akaze.detectAndCompute(this.templgray, templmask, templkp, templdas)
-        const templview = new cv.Mat()
-        cv.drawKeypoints(this.templgray, templkp, templview)
-        cv.imshow(this.$refs.cana, templview)
+        // const templview = new cv.Mat()
+        // cv.drawKeypoints(this.templgray, templkp, templview)
+        // cv.imshow(this.$refs.cana, templview)
 
         const srckp = new cv.KeyPointVector()
         const srcdas = new cv.Mat()
         const srcmask = new cv.Mat()
         akaze.detectAndCompute(srcgray, srcmask, srckp, srcdas)
-        const srcview = new cv.Mat()
-
-        cv.drawKeypoints(srcgray, srckp, srcview)
-        cv.imshow(this.$refs.canb, srcview)
+        // const srcview = new cv.Mat()
+        // cv.drawKeypoints(srcgray, srckp, srcview)
+        // cv.imshow(this.$refs.canb, srcview)
 
         // 類似特徴点検出
         const bf = new cv.BFMatcher()
@@ -231,7 +192,7 @@ export default {
 
         let homo
         // ホモグラフィー
-        if (goodmatches.size() > 10) { // 十分な点があるか？
+        if (goodmatches.size() > this.matchval) { // 十分な点があるか？
           const srcPoints = []
           const dstPoints = []
           for (let k = 0; k < goodmatches.size(); ++k) {
@@ -245,12 +206,30 @@ export default {
           const dstPointsMatArr = cv.matFromArray(dstPoints.length / 2, 1, cv.CV_32FC2, dstPoints)
           homo = cv.findHomography(srcPointsMatArr, dstPointsMatArr, cv.RANSAC, 5.0)
           console.log('findHomography done')
+
+          cancelAnimationFrame(this.id)
+          this.video.srcObject.getVideoTracks().forEach((track) => {
+            track.stop()
+          })
+          this.video.srcObject.getAudioTracks().forEach((track) => {
+            track.stop()
+          })
+          this.$refs.video.style.display = 'none'
+          if (i === 0) {
+            this.time = this.time1
+            console.log(this.time1)
+          } else if (i === 1) {
+            this.time = this.time2
+            console.log(this.time2)
+          }
+          setTimeout(this.trigger, this.time)
+          return false
         } else {
           console.log('no try findHomography')
         }
 
         // ホモグラフィーした点を整理
-        if (homo) {
+        if (homo && this.video.srcObject) {
           const objCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.templgray.cols - 1, 0, this.templgray.cols - 1, this.templgray.rows - 1, 0, this.templgray.rows - 1])
           const sceneCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 0, 0, 0, 0, 0, 0])
           cv.perspectiveTransform(objCornersMatarr, sceneCornersMatarr, homo)
@@ -309,16 +288,10 @@ export default {
         window.cv.imshowWait('ORB matches', orbMatchesImg)
       }
       */
-        cnt++
       }
     },
 
     start () {
-      // draw
-
-      // stt()
-      // stp()
-
       this.$refs.video.play()
       this.capture()
       // this.opencvtemp()
