@@ -5,7 +5,8 @@
     <img ref='pica' :src="require('../assets/pica.png')">
     <img ref='picb' :src="require('../assets/picb.png')">
     <!--img ref='image' -->
-    <video muted playsinline ref='video'></video>
+    <video muted playsinline ref='video' ></video>
+    <video playsinline ref='coke' :src="require('../assets/sizurucomp_640.mp4')" ></video>
     <canvas ref='cana'></canvas>
     <canvas ref='canb'></canvas>
     <canvas ref='canc'></canvas>
@@ -17,18 +18,6 @@
 // import store from '../store'
 // vuexはthis.$store.stateを略して呼べるようにするため
 // import { mapState, mapMutations, mapGetters mapActions } from 'vuex'
-
-const medias =
-{
-  audio: false,
-  video: {
-    facingMode: 'environment'
-    // width: { ideal: 222 }, // 1920
-    // height: { ideal: 227 } // 1080
-    // aspectRatio: {exact: 1.7777777778}
-    // facingMode: "user" // フロントカメラにアクセス
-  }
-}
 
 const mediaDevices = navigator.mediaDevices || ((navigator.mozGetUserMedia || navigator.webkitGetUserMedia)
   ? {
@@ -52,11 +41,13 @@ export default {
       h: 0,
       w: 0,
       id: undefined,
+      sp: undefined,
+      medias: undefined,
       arr: [],
       time: 0,
-      time1: 20000,
-      time2: 10000,
-      matchval: 60
+      time1: 11000,
+      time2: 1000,
+      matchval: 80
     }
   },
 
@@ -65,6 +56,34 @@ export default {
     this.$refs.pica.style.visibility = 'hidden'
     this.$refs.picb.style.visibility = 'hidden'
     this.arr = [this.$refs.pica, this.$refs.picb]
+    this.$refs.coke.style.display = 'none'
+    this.sp = navigator.userAgent.match(/iPhone|Android.+Mobile/)
+
+    if (this.sp) {
+      this.medias =
+{
+  audio: false,
+  video: {
+    facingMode: 'environment',
+    width: { ideal: 180 }, // 1920
+    height: { ideal: 320 }, // 1080
+    aspectRatio: { exact: 0.5625 } // 1.7777777778
+    // facingMode: "user" // フロントカメラにアクセス
+  }
+}
+    } else {
+      this.medias =
+{
+  audio: false,
+  video: {
+    facingMode: 'environment',
+    width: { ideal: 320 }, // 1920
+    height: { ideal: 180 }, // 1080
+    aspectRatio: { exact: 1.7777777778 } // 1.7777777778
+    // facingMode: "user" // フロントカメラにアクセス
+  }
+}
+    }
   },
 
   computed: {
@@ -82,19 +101,26 @@ export default {
 
   methods: {
     trigger () {
-      alert('movie start')
+      this.$refs.coke.play()
+      // alert('movie start')
     },
     successCallback (stream) {
       this.video.srcObject = stream
       const settings = stream.getVideoTracks()[0].getSettings()
-      this.w = settings.width
-      this.h = settings.height
+      if (this.sp) {
+        this.h = settings.width
+        this.w = settings.height
+      } else {
+        this.w = settings.width
+        this.h = settings.height
+      }
+
       console.log(this.w)
       // w=1536
       // h=2048
 
-      this.$refs.buffer.setAttribute('width', this.w / 2)
-      this.$refs.buffer.setAttribute('height', this.h / 2)
+      this.$refs.buffer.setAttribute('width', this.w)
+      this.$refs.buffer.setAttribute('height', this.h)
 
       this.$refs.buffer.style.display = 'none'
       /*
@@ -110,7 +136,7 @@ export default {
 
     capture () {
       if (mediaDevices) {
-        const promise = mediaDevices.getUserMedia(medias)
+        const promise = mediaDevices.getUserMedia(this.medias)
 
         promise.then(this.successCallback)
           .catch(this.errorCallback)
@@ -125,7 +151,7 @@ export default {
       if (this.frame % 30 !== 0) {
         return
       }
-      this.$refs.buffer.getContext('2d').drawImage(this.video, 0, 0, this.w / 2, this.h / 2)
+      this.$refs.buffer.getContext('2d').drawImage(this.video, 0, 0, this.w, this.h)
       this.opencv()
     },
     /*
@@ -215,6 +241,9 @@ export default {
             track.stop()
           })
           this.$refs.video.style.display = 'none'
+          this.$refs.coke.style.display = ''
+          this.$refs.coke.style.width = '320px'
+          this.$refs.coke.style.height = '480px'
           if (i === 0) {
             this.time = this.time1
             console.log(this.time1)
@@ -293,6 +322,8 @@ export default {
 
     start () {
       this.$refs.video.play()
+      this.$refs.coke.play()
+      this.$refs.coke.pause()
       this.capture()
       // this.opencvtemp()
       this.draw()
