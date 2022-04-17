@@ -1,15 +1,15 @@
 <template>
-  <DefaultVue />
+  <OpenCv />
 </template>
 
 <script>
-import DefaultVue from '../components/DefaultVue'
+import OpenCv from '../components/OpenCv'
 
 export default {
   name: 'HomeView',
 
   components: {
-    DefaultVue
+    OpenCv
   }
 }
 </script>
