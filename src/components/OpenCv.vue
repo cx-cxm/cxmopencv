@@ -1,6 +1,6 @@
 <template>
   <div class="">
-    <h3 class='centertop'>CMを下枠内に大きく映してね!</h3>
+    <h3 class='centertop'>CMを緑枠ぴったりに合わせてね!</h3>
     <v-btn fab x-large @click='start' class='btn' v-if='btnflg'>start</v-btn>
 
     <video muted playsinline ref='video' class='video' ></video>
@@ -38,18 +38,18 @@ export default {
       templ: '',
       h: 0,
       w: 0,
-      id: undefined,
+      id: undefined, // cancelAnimationFrame用
       sp: undefined,
       medias: undefined,
-      btnflg: true,
+      btnflg: true, // clickしたらボタンdisplay:noneにするためのflg
       pica: undefined,
       picb: undefined,
-      arr: [],
-      time: 0,
-      time1: 14000,
-      time2: 1000,
-      time_def: 30000,
-      time_def_id: undefined,
+      arr: [], // templ画像用の配列
+      time: 0, // trigger発動時間格納用
+      time1: 14000, // templ#1検知時のsetTimeout時間
+      time2: 1000, // templ#2検知時のsetTimeout時間
+      time_def: 30000, // templ検知できなかった場合の保険のsetTimeout時間
+      time_def_id: undefined, // clearTimeout用
       matchval: 90,
       pica_src: require('../assets/pica.png'),
       picb_src: require('../assets/picb.png')
@@ -62,12 +62,11 @@ export default {
     this.picb = new Image()
     this.pica.src = this.pica_src
     this.picb.src = this.picb_src
-
     this.arr = [this.pica, this.picb]
     this.$refs.coke.style.display = 'none'
     this.sp = navigator.userAgent.match(/iPhone|Android.+Mobile/)
 
-    if (this.sp) {
+    if (this.sp) { // this.getMobileOS === 'iOS'
       this.medias =
 {
   audio: false,
@@ -79,8 +78,8 @@ export default {
     aspectRatio: { exact: 1.7777777778 } // 1.7777777778
     */
     // ここの入力解像度をマッチングしたい画像解像度と合わせる。カメラ解像度高くても検知性能落ちる!!注意!!
-    width: { ideal: 180 }, // 1920
-    height: { ideal: 320 }, // 1080
+    width: { ideal: 180 }, // iPhoneだとカメラのwidth,heightはスマホ横向きにした時基準。逆になる
+    height: { ideal: 320 },
     aspectRatio: { exact: 0.5625 } // 1.7777777778
     // facingMode: "user" // フロントカメラにアクセス
   }
@@ -91,8 +90,8 @@ export default {
   audio: false,
   video: {
     facingMode: 'environment',
-    width: { ideal: 180 }, // 1920
-    height: { ideal: 320 }, // 1080
+    width: { ideal: 320 }, // 1920
+    height: { ideal: 180 }, // 1080
     aspectRatio: { exact: 1.7777777778 } // 1.7777777778
     // facingMode: "user" // フロントカメラにアクセス
   }
@@ -107,6 +106,15 @@ export default {
     classObjA: function () {
       return {
       }
+    },
+    getMobileOS () {
+      const ua = navigator.userAgent
+      if (/android/i.test(ua)) {
+        return 'Android'
+      } else if ((/iPad|iPhone|iPod/.test(ua)) || ((navigator.platform === 'MacIntel') && (navigator.maxTouchPoints > 1))) {
+        return 'iOS'
+      }
+      return 'Other'
     }
   },
 
@@ -156,20 +164,17 @@ export default {
     successCallback (stream) {
       this.video.srcObject = stream
       const settings = stream.getVideoTracks()[0].getSettings()
-      if (this.sp) {
+      this.$refs.video.width = window.innerWidth * 0.8
+      if (this.getMobileOS === 'iOS') {
         /*
         this.$refs.video.width = window.innerWidth * 0.8
         // this.$refs.video.height = window.innerHeight * 0.8
         this.w = settings.width
         this.h = settings.height
         */
-        this.$refs.video.width = window.innerWidth * 0.8
-        // this.$refs.video.width = window.innerHeight * 0.8
         this.h = settings.width
         this.w = settings.height
       } else {
-        this.$refs.video.width = window.innerWidth * 0.8
-        // this.$refs.video.Height = window.innerHeight * 0.8
         this.w = settings.width
         this.h = settings.height
       }
@@ -372,6 +377,7 @@ export default {
       // this.opencvtemp()
       this.draw()
       this.time_def_id = setTimeout(this.deftrigger, this.time_def)
+      this.$refs.video.style.border = '#42b983 1rem solid'
 
       //
       //
