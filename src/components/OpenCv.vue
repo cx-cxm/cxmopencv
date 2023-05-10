@@ -46,18 +46,18 @@ export default {
       picb: undefined,
       arr: [], // templ画像用の配列
       time: 0, // trigger発動時間格納用
-      time1: 14000, // templ#1検知時のsetTimeout時間
+      time1: 9000, // templ#1検知時のsetTimeout時間
       time2: 1000, // templ#2検知時のsetTimeout時間
       time_def: 30000, // templ検知できなかった場合の保険のsetTimeout時間
       time_def_id: undefined, // clearTimeout用
       matchval: 90,
-      pica_src: require('../assets/pica.png'),
-      picb_src: require('../assets/picb.png')
+      pica_src: require('../assets/pica18.png'),
+      picb_src: require('../assets/picb10.png')
     }
   },
 
   mounted: function () {
-    this.video = this.$refs.video
+    this.video = this.$refs.video // カメラ映像
     this.pica = new Image()
     this.picb = new Image()
     this.pica.src = this.pica_src
@@ -123,7 +123,7 @@ export default {
 
   methods: {
     trigger () {
-      this.$refs.coke.play()
+      this.$refs.coke.play() // グラス動画再生
       // alert('movie start')
     },
 
@@ -137,7 +137,8 @@ export default {
       clearTimeout(this.time_def_id)
     },
     */
-    detect (i) {
+    detect (i) { // 初期化処理+グラス動画再生時刻決定+setTimeout
+      // 初期化処理
       cancelAnimationFrame(this.id)
       this.video.srcObject.getVideoTracks().forEach((track) => {
         track.stop()
@@ -150,9 +151,11 @@ export default {
       this.$refs.coke.style.display = ''
       this.$refs.coke.style.width = '320px'
       this.$refs.coke.style.height = '480px'
+      // picaでmatchした場合
       if (i === 0) {
         this.time = this.time1
         console.log(this.time1)
+      // picbでmatchした場合
       } else if (i === 1) {
         this.time = this.time2
         console.log(this.time2)
@@ -213,10 +216,10 @@ export default {
     draw () {
       this.id = requestAnimationFrame(this.draw)
       this.frame++
-      if (this.frame % 30 !== 0) {
+      if (this.frame % 30 !== 0) { // 1秒に1回処理
         return
       }
-      this.$refs.buffer.getContext('2d').drawImage(this.video, 0, 0, this.w, this.h)
+      this.$refs.buffer.getContext('2d').drawImage(this.video, 0, 0, this.w, this.h) // bufferキャンバスにカメラ映像描く
       this.opencv()
     },
     /*
@@ -228,26 +231,28 @@ export default {
     },
     */
 
-    opencv (i) {
+    opencv (i) { // 1秒に1回実行
       // 特徴点検出
       const cv = window.cv
       for (let i = 0; i < 2; i++) {
-        this.templ = cv.imread(this.arr[i])
+        this.templ = cv.imread(this.arr[i]) // this.templ:pica,picbどちらかのimg配列が格納される
         console.log(this.time)
         this.templgray = new cv.Mat()
-        cv.cvtColor(this.templ, this.templgray, cv.COLOR_RGBA2GRAY)
+        cv.cvtColor(this.templ, this.templgray, cv.COLOR_RGBA2GRAY) // pica,picbを白黒処理
         // const templ = cv.imread(this.$refs.pica)
         const src = cv.imread(this.$refs.buffer)
         const srcgray = new cv.Mat()
         // const templgray = new cv.Mat()
-        cv.cvtColor(src, srcgray, cv.COLOR_RGBA2GRAY)
+        cv.cvtColor(src, srcgray, cv.COLOR_RGBA2GRAY) // カメラ映像を白黒処理
         // cv.cvtColor(templ, templgray, cv.COLOR_RGBA2GRAY)
 
+        // AKAZE検出器の生成
         const akaze = new cv.AKAZE()
         const templkp = new cv.KeyPointVector()
         const templdas = new cv.Mat()
         const templmask = new cv.Mat()
-        akaze.detectAndCompute(this.templgray, templmask, templkp, templdas)
+        // 特徴点座標と特徴量を検出
+        akaze.detectAndCompute(this.templgray, templmask, templkp, templdas)// グレーのpicaかpicbの特徴点検出
         // const templview = new cv.Mat()
         // cv.drawKeypoints(this.templgray, templkp, templview)
         // cv.imshow(this.$refs.cana, templview)
@@ -255,15 +260,16 @@ export default {
         const srckp = new cv.KeyPointVector()
         const srcdas = new cv.Mat()
         const srcmask = new cv.Mat()
-        akaze.detectAndCompute(srcgray, srcmask, srckp, srcdas)
+        akaze.detectAndCompute(srcgray, srcmask, srckp, srcdas)// グレーのカメラ映像の特徴点検出
         // const srcview = new cv.Mat()
         // cv.drawKeypoints(srcgray, srckp, srcview)
         // cv.imshow(this.$refs.canb, srcview)
 
         // 類似特徴点検出
+        // 類似距離を算出するためBFMatcherオブジェクトを生成
         const bf = new cv.BFMatcher()
         const matches = new cv.DMatchVectorVector()
-        bf.knnMatch(templdas, srcdas, matches, 2)
+        bf.knnMatch(templdas, srcdas, matches, 2) // 静止画とカメラ映像の特徴点比較
         // const arr = []
         const goodmatches = new cv.DMatchVector()
 
@@ -278,12 +284,13 @@ export default {
         }
         console.log('good_matches : ' + goodmatches.size())
         const imgmatches = new cv.Mat()
+        // 計算結果を描画
         cv.drawMatches(this.templgray, templkp, srcgray, srckp, goodmatches, imgmatches)
         cv.imshow(this.$refs.canc, imgmatches)
 
-        let homo
         // ホモグラフィー
-        if (goodmatches.size() > this.matchval) { // 十分な点があるか？
+        if (goodmatches.size() > this.matchval) {
+        /*
           const srcPoints = []
           const dstPoints = []
           for (let k = 0; k < goodmatches.size(); ++k) {
@@ -295,18 +302,13 @@ export default {
 
           const srcPointsMatArr = cv.matFromArray(srcPoints.length / 2, 1, cv.CV_32FC2, srcPoints)
           const dstPointsMatArr = cv.matFromArray(dstPoints.length / 2, 1, cv.CV_32FC2, dstPoints)
-          homo = cv.findHomography(srcPointsMatArr, dstPointsMatArr, cv.RANSAC, 5.0)
-          console.log('findHomography done')
+          const homo = cv.findHomography(srcPointsMatArr, dstPointsMatArr, cv.RANSAC, 5.0)
+        */
+          console.log('enough goodmatches!')
+          this.detect(i) // 初期化処理+グラス動画再生時刻決定
 
-          this.detect(i)
-
-          return false
-        } else {
-          console.log('no try findHomography')
-        }
-
-        // ホモグラフィーした点を整理
-        if (homo && this.video.srcObject) {
+          // ホモグラフィーした点を整理
+          /*
           const objCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, this.templgray.cols - 1, 0, this.templgray.cols - 1, this.templgray.rows - 1, 0, this.templgray.rows - 1])
           const sceneCornersMatarr = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 0, 0, 0, 0, 0, 0])
           cv.perspectiveTransform(objCornersMatarr, sceneCornersMatarr, homo)
@@ -315,6 +317,24 @@ export default {
           const corner3 = new cv.Point(sceneCornersMatarr.data32F[4], sceneCornersMatarr.data32F[5])
           const corner4 = new cv.Point(sceneCornersMatarr.data32F[6], sceneCornersMatarr.data32F[7])
           console.log(corner1, corner2, corner3, corner4)
+          */
+
+          matches.delete()
+          bf.delete()
+          templdas.delete() // discriptors1
+          srcdas.delete()
+          templkp.delete()
+          srckp.delete()
+          this.templgray.delete()
+          srcgray.delete()
+          // homo.delete()
+          imgmatches.delete()
+          // srcPointsMatArr.delete()
+          // dstPointsMatArr.delete()
+
+          return false
+        } else {
+          console.log('not enough goodmatches')
         }
 
         /*
@@ -365,17 +385,17 @@ export default {
         window.cv.imshowWait('ORB matches', orbMatchesImg)
       }
       */
-      }
+      } // for (let i = 0; i < 2; i++) {
     },
 
-    start () {
+    start () { // startボタン押した時の処理
       this.btnflg = false
-      this.$refs.video.play()
-      this.$refs.coke.play()
-      this.$refs.coke.pause()
-      this.capture()
+      this.$refs.video.play() // カメラ映像再生開始
+      this.$refs.coke.play() // グラス動画再生
+      this.$refs.coke.pause() // グラス動画再生一時停止
+      this.capture() // キャンバスに描くためカメラ映像取り込み開始
       // this.opencvtemp()
-      this.draw()
+      this.draw() // bufferキャンバスにカメラ動画描画
       this.time_def_id = setTimeout(this.deftrigger, this.time_def)
       this.$refs.video.style.border = '#42b983 1rem solid'
 
